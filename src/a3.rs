@@ -1,18 +1,26 @@
 use std::cmp::max;
+use std::fmt::{Debug, Formatter};
 use std::fs::read_to_string;
 use std::str::Lines;
 use std::str::FromStr;
 use strum_macros::EnumString;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 struct Number {
     value: u32,
     digit_counts: usize,
     end_index: usize,
 }
 
-#[derive(Default)]
+impl Number {
+    fn start_index(&self) -> usize {
+        self.end_index + 1 - self.digit_counts
+    }
+}
+
+#[derive(Default, Debug)]
 struct Symbol {
+    value: char,
     index: usize,
 }
 
@@ -21,6 +29,58 @@ struct Line {
     numbers: Vec<Number>,
     symbols: Vec<Symbol>,
 }
+
+impl Line {
+    fn symbol_at_index(&self, index: usize) -> Option<&Symbol> {
+        for symbol in self.symbols.iter() {
+            if symbol.index == index {
+                return Some(&symbol);
+            }
+        }
+        None
+    }
+
+    fn number_at_index(&self, index: usize) -> Option<&Number> {
+        for number in self.numbers.iter() {
+            if number.start_index() == index {
+                return Some(&number);
+            }
+        }
+        None
+    }
+
+    fn max_index(&self) -> usize {
+        let mut index = 0;
+        if self.symbols.len() > 0 {
+            index = self.symbols[self.symbols.len() - 1].index;
+        }
+        if self.numbers.len() > 0 {
+            index = max(self.numbers[self.numbers.len() - 1].end_index, index);
+        }
+        index
+    }
+
+    fn print(&self) {
+        let mut index = 0;
+        let max_index = self.max_index();
+        loop {
+            if let Some(number) = self.number_at_index(index) {
+                print!("{}", number.value);
+                index = number.end_index + 1;
+            } else if let Some(symbol) = self.symbol_at_index(index) {
+                print!("{}", symbol.value);
+                index += 1;
+            } else if index <= max_index {
+                print!(".");
+                index += 1;
+            } else {
+                println!("");
+                return;
+            }
+        }
+    }
+}
+
 
 fn parse_line(line: &str) -> Line {
     let mut numbers: Vec<Number> = vec![];
@@ -39,50 +99,53 @@ fn parse_line(line: &str) -> Line {
             }
             number = Number::default();
             if char != '.' {
-                symbols.push(Symbol { index })
+                symbols.push(Symbol { index, value: char })
             }
         }
     }
     Line { numbers, symbols }
 }
 
-fn get_valid_part_numbers_sum(numbers: &Vec<Number>, symbols: &Vec<Symbol>) -> u32 {
-    let mut sum: u32 = 0;
+fn get_valid_part_numbers(numbers: &Vec<Number>, symbols: &Vec<Symbol>) -> Vec<u32> {
+    let mut parts: Vec<u32> = vec![];
     for number in numbers.iter() {
         for symbol in symbols.iter() {
-            if symbol.index <= (number.end_index + 1) && symbol.index >= (number.end_index - number.digit_counts) {
-                sum += number.value;
+            if symbol.index <= (number.end_index + 1) && (symbol.index as i32) >= ((number.start_index() as i32) - 1) {
+                parts.push(number.value);
                 break;
             }
         }
     }
-    sum
+    parts
 }
 
 fn part_1(schematic: &str) -> u32 {
-    let mut part_numbers_sum = 0;
     let mut previous_line: Line = Line::default();
+    let mut parts: Vec<u32> = vec![];
     for line_str in schematic.lines() {
         let current_line = parse_line(line_str);
-
+        current_line.print();
         // get numbers in current line where symbol in previous line
-        part_numbers_sum += get_valid_part_numbers_sum(&current_line.numbers, &previous_line.symbols);
+        parts.append(&mut get_valid_part_numbers(&current_line.numbers, &previous_line.symbols));
 
         // get numbers in previous line where symbol in current line
-        part_numbers_sum += get_valid_part_numbers_sum(&previous_line.numbers, &current_line.symbols);
+        parts.append(&mut get_valid_part_numbers(&previous_line.numbers, &current_line.symbols));
 
         // get numbers in current line where symbol in current line
-        part_numbers_sum += get_valid_part_numbers_sum(&current_line.numbers, &current_line.symbols);
+        parts.append(&mut get_valid_part_numbers(&current_line.numbers, &current_line.symbols));
 
         previous_line = current_line;
     }
-    part_numbers_sum
+    // parts.sort_unstable();
+    // parts.dedup();
+    parts.iter().sum()
 }
 
 
 fn main() {
     let schematic = read_to_string("input3.txt").unwrap();
-    part_1(schematic.as_str());
+    let sum = part_1(schematic.as_str());
+    println!("{}", sum);
 }
 
 
@@ -102,6 +165,8 @@ mod tests {
 ......755.
 ...$.*....
 .664.598..";
-        assert_eq!(part_1(schematic), 4361);
+        let sum = part_1(schematic);
+        println!("{}", sum);
+        assert_eq!(sum, 4361);
     }
 }
