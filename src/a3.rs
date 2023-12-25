@@ -5,7 +5,7 @@ use std::str::Lines;
 use std::str::FromStr;
 use strum_macros::EnumString;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 struct Number {
     value: u32,
     digit_counts: usize,
@@ -106,12 +106,12 @@ fn parse_line(line: &str) -> Line {
     Line { numbers, symbols }
 }
 
-fn get_valid_part_numbers(numbers: &Vec<Number>, symbols: &Vec<Symbol>) -> Vec<u32> {
-    let mut parts: Vec<u32> = vec![];
+fn get_valid_part_numbers<'a>(numbers: &'a Vec<Number>, symbols: &'a Vec<Symbol>) -> Vec<Number> {
+    let mut parts: Vec<Number> = vec![];
     for number in numbers.iter() {
         for symbol in symbols.iter() {
             if symbol.index <= (number.end_index + 1) && (symbol.index as i32) >= ((number.start_index() as i32) - 1) {
-                parts.push(number.value);
+                parts.push(number.clone());
                 break;
             }
         }
@@ -120,25 +120,26 @@ fn get_valid_part_numbers(numbers: &Vec<Number>, symbols: &Vec<Symbol>) -> Vec<u
 }
 
 fn part_1(schematic: &str) -> u32 {
-    let mut previous_line: Line = Line::default();
-    let mut parts: Vec<u32> = vec![];
+    let mut maybe_previous_line: Option<Line> = None;
+    let mut parts: Vec<Number> = vec![];
     for line_str in schematic.lines() {
-        let current_line = parse_line(line_str);
-        current_line.print();
-        // get numbers in current line where symbol in previous line
-        parts.append(&mut get_valid_part_numbers(&current_line.numbers, &previous_line.symbols));
-
-        // get numbers in previous line where symbol in current line
-        parts.append(&mut get_valid_part_numbers(&previous_line.numbers, &current_line.symbols));
+        let current_line= parse_line(line_str);
+        if let Some(previous_line) = maybe_previous_line {
+            // get numbers in current line where symbol in previous line
+            parts.append(&mut get_valid_part_numbers(&current_line.numbers, &previous_line.symbols));
+            // get numbers in previous line where symbol in current line
+            parts.append(&mut get_valid_part_numbers(&previous_line.numbers, &current_line.symbols));
+        }
 
         // get numbers in current line where symbol in current line
         parts.append(&mut get_valid_part_numbers(&current_line.numbers, &current_line.symbols));
 
-        previous_line = current_line;
+        current_line.print();
+        maybe_previous_line = Some(current_line);
     }
     // parts.sort_unstable();
     // parts.dedup();
-    parts.iter().sum()
+    0
 }
 
 
