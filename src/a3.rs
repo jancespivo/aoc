@@ -4,8 +4,9 @@ use std::fs::read_to_string;
 use std::str::Lines;
 use std::str::FromStr;
 use strum_macros::EnumString;
+use colored::Colorize;
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 struct Number {
     value: u32,
     digit_counts: usize,
@@ -18,9 +19,14 @@ impl Number {
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 struct Symbol {
     value: char,
+    index: usize,
+}
+
+#[derive(Debug)]
+struct Gear {
     index: usize,
 }
 
@@ -28,6 +34,7 @@ struct Symbol {
 struct Line {
     numbers: Vec<Number>,
     symbols: Vec<Symbol>,
+    gears: Vec<Gear>,
 }
 
 impl Line {
@@ -35,6 +42,15 @@ impl Line {
         for symbol in self.symbols.iter() {
             if symbol.index == index {
                 return Some(&symbol);
+            }
+        }
+        None
+    }
+
+    fn gear_at_index(&self, index: usize) -> Option<&Gear> {
+        for gear in self.gears.iter() {
+            if gear.index == index {
+                return Some(&gear);
             }
         }
         None
@@ -60,15 +76,26 @@ impl Line {
         index
     }
 
-    fn print(&self) {
+    fn print(&self, parts: &Vec<Number>) {
         let mut index = 0;
         let max_index = self.max_index();
         loop {
             if let Some(number) = self.number_at_index(index) {
-                print!("{}", number.value);
+                print!(
+                    "{}",
+                    if parts.contains(number) {
+                        number.value.to_string().purple()
+                    } else {
+                        number.value.to_string().normal()
+                    }
+                );
                 index = number.end_index + 1;
             } else if let Some(symbol) = self.symbol_at_index(index) {
-                print!("{}", symbol.value);
+                if let Some(gear) = self.gear_at_index(index) {
+                    print!("{}", symbol.value.to_string().red());
+                } else {
+                    print!("{}", symbol.value);
+                }
                 index += 1;
             } else if index <= max_index {
                 print!(".");
@@ -85,9 +112,10 @@ impl Line {
 fn parse_line(line: &str) -> Line {
     let mut numbers: Vec<Number> = vec![];
     let mut symbols: Vec<Symbol> = vec![];
+    let mut gears: Vec<Gear> = vec![];
     // let mut value: u32 = 0;
     // let mut digit_counts: i8 = 0;
-    let mut number: Number = Number::default();
+    let mut number: Number = Number::default();  // TODO Option<Number>
     for (index, char) in line.chars().enumerate() {
         if let Some(digit) = char.to_digit(10) {
             number.value = number.value * 10 + digit;
@@ -101,9 +129,15 @@ fn parse_line(line: &str) -> Line {
             if char != '.' {
                 symbols.push(Symbol { index, value: char })
             }
+            if char == '*' {
+                gears.push(Gear {index})
+            }
         }
     }
-    Line { numbers, symbols }
+    if number.value > 0 {
+        numbers.push(number);
+    }
+    Line { numbers, symbols, gears }
 }
 
 fn get_valid_part_numbers<'a>(numbers: &'a Vec<Number>, symbols: &'a Vec<Symbol>) -> Vec<Number> {
@@ -120,26 +154,37 @@ fn get_valid_part_numbers<'a>(numbers: &'a Vec<Number>, symbols: &'a Vec<Symbol>
 }
 
 fn part_1(schematic: &str) -> u32 {
+    let mut maybe_previous_previous_line: Option<Line> = None;
     let mut maybe_previous_line: Option<Line> = None;
     let mut parts: Vec<Number> = vec![];
     for line_str in schematic.lines() {
-        let current_line= parse_line(line_str);
+        let current_line = parse_line(line_str);
+
+        // get numbers in current line where symbol in current line
+        parts.append(&mut get_valid_part_numbers(&current_line.numbers, &current_line.symbols));
+
         if let Some(previous_line) = maybe_previous_line {
             // get numbers in current line where symbol in previous line
             parts.append(&mut get_valid_part_numbers(&current_line.numbers, &previous_line.symbols));
             // get numbers in previous line where symbol in current line
             parts.append(&mut get_valid_part_numbers(&previous_line.numbers, &current_line.symbols));
+            previous_line.print(&parts);
+            // let z: Vec<u32> = parts.iter().map(|x| x.value).collect();
+            // println!("{:?}", z);
         }
-
-        // get numbers in current line where symbol in current line
-        parts.append(&mut get_valid_part_numbers(&current_line.numbers, &current_line.symbols));
-
-        current_line.print();
         maybe_previous_line = Some(current_line);
     }
+
+    if let Some(previous_line) = maybe_previous_line {
+        previous_line.print(&parts);
+        // let z: Vec<u32> = parts.iter().map(|x| x.value).collect();
+        // println!("{:?}", z);
+    }
+    //
     // parts.sort_unstable();
     // parts.dedup();
-    0
+    // 0
+    parts.iter().map(|x| x.value).sum()
 }
 
 
