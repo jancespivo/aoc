@@ -25,7 +25,7 @@ struct Symbol {
     index: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Gear {
     index: usize,
 }
@@ -35,6 +35,14 @@ struct Line {
     numbers: Vec<Number>,
     symbols: Vec<Symbol>,
     gears: Vec<Gear>,
+}
+
+struct GearParts(Number, Gear, Number);
+
+impl GearParts {
+    fn value(&self) -> u32 {
+        self.0.value * self.2.value
+    }
 }
 
 impl Line {
@@ -76,7 +84,7 @@ impl Line {
         index
     }
 
-    fn print(&self, parts: &Vec<Number>) {
+    fn print(&self, parts: &Vec<Number>, gear_parts: &Vec<GearParts>) {
         let mut index = 0;
         let max_index = self.max_index();
         loop {
@@ -84,7 +92,11 @@ impl Line {
                 print!(
                     "{}",
                     if parts.contains(number) {
-                        number.value.to_string().purple()
+                        // if gear_parts.contains(number) {
+                        //     number.value.to_string().red()
+                        // } else {
+                            number.value.to_string().purple()
+                        // }
                     } else {
                         number.value.to_string().normal()
                     }
@@ -130,7 +142,7 @@ fn parse_line(line: &str) -> Line {
                 symbols.push(Symbol { index, value: char })
             }
             if char == '*' {
-                gears.push(Gear {index})
+                gears.push(Gear { index })
             }
         }
     }
@@ -140,11 +152,15 @@ fn parse_line(line: &str) -> Line {
     Line { numbers, symbols, gears }
 }
 
+fn is_neighbor(symbol_index: usize, number: &Number) -> bool {
+    symbol_index <= (number.end_index + 1) && (symbol_index as i32) >= ((number.start_index() as i32) - 1)
+}
+
 fn get_valid_part_numbers<'a>(numbers: &'a Vec<Number>, symbols: &'a Vec<Symbol>) -> Vec<Number> {
     let mut parts: Vec<Number> = vec![];
     for number in numbers.iter() {
         for symbol in symbols.iter() {
-            if symbol.index <= (number.end_index + 1) && (symbol.index as i32) >= ((number.start_index() as i32) - 1) {
+            if is_neighbor(symbol.index, &number) {
                 parts.push(number.clone());
                 break;
             }
@@ -153,10 +169,38 @@ fn get_valid_part_numbers<'a>(numbers: &'a Vec<Number>, symbols: &'a Vec<Symbol>
     parts
 }
 
-fn part_1(schematic: &str) -> u32 {
+fn find_gear_parts(maybe_first_numbers: Option<&Vec<Number>>, middle_line: &Line, maybe_last_numbers: Option<&Vec<Number>>) -> Vec<GearParts> {
+    fn find_neighbor_numbers(symbol_index: usize, numbers: &Vec<Number>) -> Vec<Number> {
+        let mut number_values: Vec<Number> = vec![];
+        for number in numbers.iter() {
+            if is_neighbor(symbol_index, &number) {
+                number_values.push(number.clone());
+            }
+        }
+        number_values
+    }
+    let mut gear_parts: Vec<GearParts> = vec![];
+    for gear in middle_line.gears.iter() {
+        let mut neighbor_numbers: Vec<Number> = vec![];
+        if let Some(first_numbers) = maybe_first_numbers {
+            neighbor_numbers.append(&mut find_neighbor_numbers(gear.index, &first_numbers));
+        }
+        neighbor_numbers.append(&mut find_neighbor_numbers(gear.index, &middle_line.numbers));
+        if let Some(last_numbers) = maybe_last_numbers {
+            neighbor_numbers.append(&mut find_neighbor_numbers(gear.index, &last_numbers));
+        }
+        if neighbor_numbers.len() == 2 {
+            gear_parts.push(GearParts(neighbor_numbers[0].clone(), gear.clone(), neighbor_numbers[1].clone()));
+        }
+    }
+    gear_parts
+}
+
+fn part_1(schematic: &str) -> (u32, u32) {
     let mut maybe_previous_previous_line: Option<Line> = None;
     let mut maybe_previous_line: Option<Line> = None;
     let mut parts: Vec<Number> = vec![];
+    let mut gear_parts: Vec<GearParts> = vec![];
     for line_str in schematic.lines() {
         let current_line = parse_line(line_str);
 
@@ -168,30 +212,48 @@ fn part_1(schematic: &str) -> u32 {
             parts.append(&mut get_valid_part_numbers(&current_line.numbers, &previous_line.symbols));
             // get numbers in previous line where symbol in current line
             parts.append(&mut get_valid_part_numbers(&previous_line.numbers, &current_line.symbols));
-            previous_line.print(&parts);
             // let z: Vec<u32> = parts.iter().map(|x| x.value).collect();
             // println!("{:?}", z);
+            if let Some(previous_previous_line) = maybe_previous_previous_line {
+                //  case2 - previous_previous, previous has gear, current
+                gear_parts.append(&mut find_gear_parts(Some(&previous_previous_line.numbers), &previous_line, Some(&current_line.numbers)));
+                previous_previous_line.print(&parts, &gear_parts);
+            } else {
+                //  case1 - previous_previous = None, previous has gear, current
+                gear_parts.append(&mut find_gear_parts(None, &previous_line, Some(&current_line.numbers)));
+            }
+            maybe_previous_previous_line = Some(previous_line);
         }
+
         maybe_previous_line = Some(current_line);
     }
 
     if let Some(previous_line) = maybe_previous_line {
-        previous_line.print(&parts);
         // let z: Vec<u32> = parts.iter().map(|x| x.value).collect();
         // println!("{:?}", z);
+
+        if let Some(previous_previous_line) = maybe_previous_previous_line {
+            //  case3 - maybe_previous_previous_line, maybe_previous_line has gear
+            gear_parts.append(&mut find_gear_parts(Some(&previous_previous_line.numbers), &previous_line, None));
+            previous_previous_line.print(&parts, &gear_parts);
+        }
+        previous_line.print(&parts, &gear_parts);
     }
     //
     // parts.sort_unstable();
     // parts.dedup();
     // 0
-    parts.iter().map(|x| x.value).sum()
+    (
+        parts.iter().map(|x| x.value).sum(),
+        gear_parts.iter().map(|x| x.value()).sum()
+    )
 }
 
 
 fn main() {
     let schematic = read_to_string("input3.txt").unwrap();
-    let sum = part_1(schematic.as_str());
-    println!("{}", sum);
+    let (sum1, sum2) = part_1(schematic.as_str());
+    println!("{} {}", sum1, sum2);
 }
 
 
@@ -211,8 +273,10 @@ mod tests {
 ......755.
 ...$.*....
 .664.598..";
-        let sum = part_1(schematic);
-        println!("{}", sum);
-        assert_eq!(sum, 4361);
+        let (sum1, sum2) = part_1(schematic);
+        println!("{} {}", sum1, sum2);
+        assert_eq!(sum1, 4361);
+        assert_eq!(sum2, 467835);
+
     }
 }
