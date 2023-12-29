@@ -84,6 +84,10 @@ impl Line {
         index
     }
 
+    #[cfg(not(debug_assertions))]
+    fn print(&self, parts: &Vec<Number>, gear_parts: &Vec<GearParts>) {}
+
+    #[cfg(debug_assertions)]
     fn print(&self, parts: &Vec<Number>, gear_parts: &Vec<GearParts>) {
         let mut index = 0;
         let max_index = self.max_index();
