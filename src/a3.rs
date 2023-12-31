@@ -1,9 +1,7 @@
 use std::cmp::max;
-use std::fmt::{Debug, Formatter};
+use std::fmt::Debug;
 use std::fs::read_to_string;
-use std::str::Lines;
 use std::str::FromStr;
-use strum_macros::EnumString;
 use colored::Colorize;
 
 #[derive(Default, Debug, Clone, PartialEq)]
@@ -99,7 +97,7 @@ impl Line {
                         // if gear_parts.contains(number) {
                         //     number.value.to_string().red()
                         // } else {
-                            number.value.to_string().purple()
+                        number.value.to_string().purple()
                         // }
                     } else {
                         number.value.to_string().normal()
@@ -129,8 +127,6 @@ fn parse_line(line: &str) -> Line {
     let mut numbers: Vec<Number> = vec![];
     let mut symbols: Vec<Symbol> = vec![];
     let mut gears: Vec<Gear> = vec![];
-    // let mut value: u32 = 0;
-    // let mut digit_counts: i8 = 0;
     let mut number: Number = Number::default();  // TODO Option<Number>
     for (index, char) in line.chars().enumerate() {
         if let Some(digit) = char.to_digit(10) {
@@ -216,7 +212,6 @@ fn part_1(schematic: &str) -> (u32, u32) {
             parts.append(&mut get_valid_part_numbers(&current_line.numbers, &previous_line.symbols));
             // get numbers in previous line where symbol in current line
             parts.append(&mut get_valid_part_numbers(&previous_line.numbers, &current_line.symbols));
-            // let z: Vec<u32> = parts.iter().map(|x| x.value).collect();
             // println!("{:?}", z);
             if let Some(previous_previous_line) = maybe_previous_previous_line {
                 //  case2 - previous_previous, previous has gear, current
@@ -233,9 +228,6 @@ fn part_1(schematic: &str) -> (u32, u32) {
     }
 
     if let Some(previous_line) = maybe_previous_line {
-        // let z: Vec<u32> = parts.iter().map(|x| x.value).collect();
-        // println!("{:?}", z);
-
         if let Some(previous_previous_line) = maybe_previous_previous_line {
             //  case3 - maybe_previous_previous_line, maybe_previous_line has gear
             gear_parts.append(&mut find_gear_parts(Some(&previous_previous_line.numbers), &previous_line, None));
@@ -243,10 +235,6 @@ fn part_1(schematic: &str) -> (u32, u32) {
         }
         previous_line.print(&parts, &gear_parts);
     }
-    //
-    // parts.sort_unstable();
-    // parts.dedup();
-    // 0
     (
         parts.iter().map(|x| x.value).sum(),
         gear_parts.iter().map(|x| x.value()).sum()
@@ -281,6 +269,5 @@ mod tests {
         println!("{} {}", sum1, sum2);
         assert_eq!(sum1, 4361);
         assert_eq!(sum2, 467835);
-
     }
 }
