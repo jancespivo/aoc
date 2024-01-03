@@ -27,6 +27,11 @@ name = "a4"
 path = "src/a5.rs"
 name = "a5"
 
+[[bin]]
+path = "src/a6.rs"
+name = "a6"
+
+
 [dependencies]
 colored = "2.1.0"
 itertools = "0.12.0"
