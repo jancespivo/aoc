@@ -1,5 +1,4 @@
-use std::cmp::min;
-use std::collections::{HashSet, VecDeque};
+use std::cmp::{max, min};
 use std::fs::read_to_string;
 use itertools::Itertools;
 
@@ -9,10 +8,10 @@ struct Mapping {
 }
 
 impl Mapping {
-    fn get_dest_from_source(&self, source: &i64) -> i64 {
+    fn get_dest_from_source(&self, source: i64) -> i64 {
         let mut s: i64 = source.clone();
         for submapping in self.submappings.iter() {
-            s = submapping.get_dest_from_source(&s);
+            s = submapping.get_dest_from_source(s);
         }
         s
     }
@@ -25,17 +24,22 @@ type SeedRanges = Vec<SeedRange>;
 
 struct SeedRange {
     start: i64,
-    range: i64,
+    end: i64,
 }
 
-// impl SeedRange {
-//     fn get_dest_from_source(&self, mapping: &Mapping) -> i64 {
-//         let res: i64 = 0;
-//         for seed in self.start..(self.start + self.range) {
-//             min(res, mapping.get_dest_from_source(&seed))
-//         }
-//     }
-// }
+impl SeedRange {
+    fn new(start: i64, range: i64) -> Self {
+        Self { start, end: start + range - 1 }
+    }
+
+    fn get_dest_from_source(&self, mapping: &Mapping) -> i64 {
+        let mut res: i64 = 0;
+        for seed in self.start..=self.end {
+            res = min(res, mapping.get_dest_from_source(seed))
+        }
+        res
+    }
+}
 
 #[derive(Debug)]
 struct Submapping {
@@ -43,7 +47,7 @@ struct Submapping {
 }
 
 impl Submapping {
-    fn get_dest_from_source(&self, source: &i64) -> i64 {
+    fn get_dest_from_source(&self, source: i64) -> i64 {
         for map in self.maps.iter() {
             if let Some(dest) = map.get_dest_from_source(source) {
                 return dest;
@@ -56,16 +60,23 @@ impl Submapping {
 #[derive(Debug)]
 struct SourceDestMap {
     source_start: i64,
-    destination_start: i64,
-    range_length: i64,
+    source_end: i64,
+    destination_diff: i64,
 }
 
 
 impl SourceDestMap {
-    fn get_dest_from_source(&self, source: &i64) -> Option<i64> {
-        let diff = source - self.source_start;
-        if diff >= 0 && (diff < self.range_length) {
-            Some(self.destination_start + diff)
+    fn new(destination_start: i64, source_start: i64, range: i64) -> Self {
+        Self {
+            source_start,
+            source_end: source_start + range - 1,
+            destination_diff: destination_start - source_start,
+        }
+    }
+
+    fn get_dest_from_source(&self, source: i64) -> Option<i64> {
+        if source >= self.source_start && source <= self.source_end {
+            Some(source + self.destination_diff)
         } else {
             None
         }
@@ -78,10 +89,8 @@ fn parse(input: &str) -> (Seeds, SeedRanges, Mapping) {
     let (_, seeds_str) = first_line.expect("seed must be here").split_once(": ").unwrap();
     let seeds: Seeds = seeds_str.trim().split(" ").map(|x| x.parse().unwrap()).collect();
     let mut seed_ranges = vec![];
-    for (i, start) in seeds.iter().enumerate() {
-        for range in seeds[i..i + 1].iter() {
-            seed_ranges.push(SeedRange { start: *start, range: *range });
-        }
+    for pair in seeds.chunks(2) {
+        seed_ranges.push(SeedRange::new(pair[0], pair[1]));
     }
     let _ = lines.next();  // empty line
     let mut mapping: Mapping = Mapping { submappings: vec![] };
@@ -96,11 +105,12 @@ fn parse(input: &str) -> (Seeds, SeedRanges, Mapping) {
                         break;
                     }
                     let (destination_start, source_start, range_length) = line.split(" ").map(|x| x.parse().unwrap()).collect_tuple().unwrap();
-                    submapping.maps.push(SourceDestMap { destination_start, source_start, range_length });
+                    submapping.maps.push(SourceDestMap::new(destination_start, source_start, range_length));
                 } else {
                     break;
                 }
             }
+
             mapping.submappings.push(submapping);
         } else {
             break;
@@ -111,14 +121,58 @@ fn parse(input: &str) -> (Seeds, SeedRanges, Mapping) {
 
 
 fn part_1(input: &str) -> (i64, i64) {
-    let (seeds, seed_ranges, mapping) = parse(input);
+    let (simple_seeds, mut seed_ranges, mut mapping) = parse(input);
+
+
+    for submapping in mapping.submappings.iter_mut() {
+        seed_ranges.sort_by_key(|x| x.start);
+        let mut seeds = seed_ranges.iter_mut();
+        let mut new_seeds: Vec<SeedRange> = vec![];
+        submapping.maps.sort_by_key(|x| x.source_start);
+        let mut maps = submapping.maps.iter();
+
+        let mut maybe_seed = seeds.next();
+        let mut maybe_sourcedestmap = maps.next();
+        loop {
+            if let Some(ref mut seed) = maybe_seed {
+                if let Some(sourcedestmap) = maybe_sourcedestmap {
+                    if seed.start <= sourcedestmap.source_end { // DS <= CE
+                        if seed.end < sourcedestmap.source_start {  // DE < CS
+                            new_seeds.push(SeedRange { start: seed.start, end: seed.end }); // DS DE
+                        } else {
+                            if seed.start < sourcedestmap.source_start { // DS < CS
+                                new_seeds.push(SeedRange { start: seed.start, end: sourcedestmap.source_start }); // DS CS
+                            }
+                            new_seeds.push(SeedRange {
+                                start: max(seed.start, sourcedestmap.source_start) + sourcedestmap.destination_diff,
+                                end: min(seed.end, sourcedestmap.source_end) + sourcedestmap.destination_diff,
+                            });
+                        }
+
+                        if sourcedestmap.source_end < seed.end { // CE < DE
+                            seed.start = sourcedestmap.source_end + 1;
+                            maybe_sourcedestmap = maps.next()
+                        } else {
+                            maybe_seed = seeds.next();
+                        }
+                    } else {
+                        maybe_sourcedestmap = maps.next()
+                    }
+                } else {
+                    new_seeds.push(SeedRange { start: seed.start, end: seed.end });
+                    maybe_seed = seeds.next();
+                }
+            } else {
+                break;
+            }
+        }
+        seed_ranges = new_seeds;
+    }
+
+
     (
-        seeds.iter().map(|x| mapping.get_dest_from_source(x)).min().unwrap(),
-        seed_ranges.iter().map(
-            |x| (x.start..(x.start + x.range)).map(
-                |seed| mapping.get_dest_from_source(&seed)
-            ).min().unwrap()
-        ).min().unwrap(),
+        simple_seeds.iter().map(|x| mapping.get_dest_from_source(*x)).min().unwrap(),
+        seed_ranges.iter().map(|x| x.start).min().unwrap()
     )
 }
 
@@ -172,7 +226,7 @@ humidity-to-location map:
         let (res1, res2) = part_1(INPUT);
         println!("{} {}", res1, res2);
         assert_eq!(res1, 35);
-        assert_eq!(res2, 0);
+        assert_eq!(res2, 46);
     }
 
     #[test]
@@ -187,7 +241,7 @@ humidity-to-location map:
     fn test() {
         let input = read_to_string("input5.txt").unwrap();
         let (res1, res2) = part_1(input.as_str());
-        assert_eq!(res1, 35);
-        assert_eq!(res2, 0);
+        assert_eq!(res1, 510109797);
+        assert_eq!(res2, 9622622);
     }
 }

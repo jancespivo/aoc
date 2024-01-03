@@ -1,17 +1,22 @@
 use std::cmp::max;
 use std::fs::read_to_string;
 use std::str::Lines;
-use std::str::FromStr;
-use strum_macros::EnumString;
 
-#[derive(EnumString)]
 enum Color {
-    #[strum(ascii_case_insensitive)]
     Red,
-    #[strum(ascii_case_insensitive)]
     Green,
-    #[strum(ascii_case_insensitive)]
     Blue,
+}
+
+impl Color {
+    fn from_str(inp: &str) -> Result<Self, String> {
+        match inp {
+            "red" => Ok(Self::Red),
+            "green" => Ok(Self::Green),
+            "blue" => Ok(Self::Blue),
+            _ => Err("Color not found".to_string()),
+        }
+    }
 }
 
 fn color_is_possible(color: &Color, num: i8) -> bool {

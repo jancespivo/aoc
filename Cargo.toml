@@ -1,0 +1,32 @@
+[package]
+name = "advent_of_code_2023"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+
+[[bin]]
+path = "src/a1.rs"
+name = "a1"
+
+[[bin]]
+path = "src/a2.rs"
+name = "a2"
+
+[[bin]]
+path = "src/a3.rs"
+name = "a3"
+
+[[bin]]
+path = "src/a4.rs"
+name = "a4"
+
+[[bin]]
+path = "src/a5.rs"
+name = "a5"
+
+[dependencies]
+colored = "2.1.0"
+itertools = "0.12.0"
