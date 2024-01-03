@@ -31,14 +31,6 @@ impl SeedRange {
     fn new(start: i64, range: i64) -> Self {
         Self { start, end: start + range - 1 }
     }
-
-    fn get_dest_from_source(&self, mapping: &Mapping) -> i64 {
-        let mut res: i64 = 0;
-        for seed in self.start..=self.end {
-            res = min(res, mapping.get_dest_from_source(seed))
-        }
-        res
-    }
 }
 
 #[derive(Debug)]
@@ -120,9 +112,13 @@ fn parse(input: &str) -> (Seeds, SeedRanges, Mapping) {
 }
 
 
-fn part_1(input: &str) -> (i64, i64) {
-    let (simple_seeds, mut seed_ranges, mut mapping) = parse(input);
+fn part_1(input: &str) -> i64 {
+    let (simple_seeds, _, mapping) = parse(input);
+    simple_seeds.iter().map(|x| mapping.get_dest_from_source(*x)).min().unwrap()
+}
 
+fn part_2(input: &str) -> i64 {
+    let (_, mut seed_ranges, mut mapping) = parse(input);
 
     for submapping in mapping.submappings.iter_mut() {
         seed_ranges.sort_by_key(|x| x.start);
@@ -169,23 +165,19 @@ fn part_1(input: &str) -> (i64, i64) {
         seed_ranges = new_seeds;
     }
 
-
-    (
-        simple_seeds.iter().map(|x| mapping.get_dest_from_source(*x)).min().unwrap(),
-        seed_ranges.iter().map(|x| x.start).min().unwrap()
-    )
+    seed_ranges.iter().map(|x| x.start).min().unwrap()
 }
 
 fn main() {
     let input = read_to_string("input5.txt").unwrap();
-    let (res1, res2) = part_1(input.as_str());
+    let res1 = part_1(input.as_str());
+    let res2 = part_2(input.as_str());
     println!("{} {}", res1, res2);
 }
 
 #[cfg(test)]
 mod tests {
-    use std::fs::read_to_string;
-    use crate::{parse, part_1};
+    use crate::{part_1, part_2};
 
     const INPUT: &str = "seeds: 79 14 55 13
 
@@ -222,26 +214,12 @@ humidity-to-location map:
 56 93 4";
 
     #[test]
-    fn main_test() {
-        let (res1, res2) = part_1(INPUT);
-        println!("{} {}", res1, res2);
-        assert_eq!(res1, 35);
-        assert_eq!(res2, 46);
+    fn part_1_test() {
+        assert_eq!(part_1(INPUT), 35);
     }
 
     #[test]
-    fn parse_test() {
-        let (seeds, seeds_ranges, mapping) = parse(INPUT);
-        println!("{:?} {:?}", seeds, mapping);
-    }
-
-    fn parse_test_map() {}
-
-    #[test]
-    fn test() {
-        let input = read_to_string("input5.txt").unwrap();
-        let (res1, res2) = part_1(input.as_str());
-        assert_eq!(res1, 510109797);
-        assert_eq!(res2, 9622622);
+    fn part_2_test() {
+        assert_eq!(part_2(INPUT), 46);
     }
 }

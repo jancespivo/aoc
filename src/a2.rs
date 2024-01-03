@@ -83,7 +83,7 @@ fn get_raw_sets(line: &str) -> (i16, &str) {
     (id, raw_sets)
 }
 
-fn part_1(lines: Lines) {
+fn both_parts(lines: Lines) -> (i16, i32) {
     let mut suma = 0;
     let mut power_suma = 0;
     for line in lines {
@@ -94,21 +94,23 @@ fn part_1(lines: Lines) {
         }
         power_suma += power;
     }
-    println!("{}", suma);
-    println!("{}", power_suma);
+    (suma, power_suma)
 }
 
 
 fn main() {
     let inp = read_to_string("input2.txt").unwrap();
     let lines = inp.lines();
-    part_1(lines);
+    let (res1, res2) = both_parts(lines);
+    println!("{}", res1);
+    println!("{}", res2);
 }
 
 
 #[cfg(test)]
 mod tests {
-    use crate::a2::part_1;
+    use itertools::assert_equal;
+    use crate::a2::both_parts;
 
     #[test]
     fn test_part_1() {
@@ -117,6 +119,8 @@ Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
 Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red
 Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
 Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green".lines();
-        part_1(lines);
+        let (res1, res2) = both_parts(lines);
+        assert_eq!(res1, 8);
+        assert_eq!(res2, 2286);
     }
 }

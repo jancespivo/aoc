@@ -196,7 +196,7 @@ fn find_gear_parts(maybe_first_numbers: Option<&Vec<Number>>, middle_line: &Line
     gear_parts
 }
 
-fn part_1(schematic: &str) -> (u32, u32) {
+fn both_parts(schematic: &str) -> (u32, u32) {
     let mut maybe_previous_previous_line: Option<Line> = None;
     let mut maybe_previous_line: Option<Line> = None;
     let mut parts: Vec<Number> = vec![];
@@ -244,14 +244,14 @@ fn part_1(schematic: &str) -> (u32, u32) {
 
 fn main() {
     let schematic = read_to_string("input3.txt").unwrap();
-    let (sum1, sum2) = part_1(schematic.as_str());
+    let (sum1, sum2) = both_parts(schematic.as_str());
     println!("{} {}", sum1, sum2);
 }
 
 
 #[cfg(test)]
 mod tests {
-    use crate::part_1;
+    use crate::both_parts;
 
     #[test]
     fn test() {
@@ -265,7 +265,7 @@ mod tests {
 ......755.
 ...$.*....
 .664.598..";
-        let (sum1, sum2) = part_1(schematic);
+        let (sum1, sum2) = both_parts(schematic);
         println!("{} {}", sum1, sum2);
         assert_eq!(sum1, 4361);
         assert_eq!(sum2, 467835);

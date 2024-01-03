@@ -35,7 +35,11 @@ fn points_for_line(line: Line) -> u32 {
     }
 }
 
-fn part_1(cards: &str) -> (u32, u32) {
+fn part_1(cards: &str) -> u32 {
+    cards.lines().map(|x| parse_line(x)).map(|x| points_for_line(x)).sum()
+}
+
+fn part_2(cards: &str) -> u32 {
     let mut next_cards: VecDeque<u32> = VecDeque::new();
     let mut points = 0;
     for line in cards.lines() {
@@ -49,24 +53,21 @@ fn part_1(cards: &str) -> (u32, u32) {
             next_cards.push_back(number_of_copies);
         }
     }
-    (
-        cards.lines().map(|x| parse_line(x)).map(|x| points_for_line(x)).sum(),
-        points
-    )
+    points
 }
 
 
 fn main() {
     let cards = read_to_string("input4.txt").unwrap();
-    let (sum1, sum2) = part_1(cards.as_str());
-    println!("{} {}", sum1, sum2);
+    println!("{}", part_1(cards.as_str()));
+    println!("{}", part_2(cards.as_str()));
 }
 
 
 #[cfg(test)]
 mod tests {
     use std::fs::read_to_string;
-    use crate::{parse_line, part_1, points_for_line};
+    use crate::{parse_line, part_1, part_2, points_for_line};
 
     const CARDS: &str = "Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
 Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19
@@ -76,7 +77,7 @@ Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36
 Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11";
 
     #[test]
-    fn test() {
+    fn test_points_for_line() {
         for (line_str, points) in CARDS.lines().zip([8, 2, 2, 1, 0, 0]) {
             let line = parse_line(line_str);
             assert_eq!(points_for_line(line), points);
@@ -84,18 +85,13 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11";
     }
 
     #[test]
-    fn test2() {
-        let (sum1, sum2) = part_1(CARDS);
-        println!("{} {}", sum1, sum2);
-        assert_eq!(sum1, 13);
-        assert_eq!(sum2, 30);
+    fn test_part_1() {
+        assert_eq!(part_1(CARDS), 13);
     }
 
     #[test]
-    fn test3() {
-        let cards = read_to_string("input4.txt").unwrap();
-        let (sum1, sum2) = part_1(cards.as_str());
-        assert_eq!(sum1, 23441);
-        assert_eq!(sum2, 5923918);
+    fn test_part_2() {
+        assert_eq!(part_2(CARDS), 30);
     }
+
 }
