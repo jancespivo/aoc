@@ -31,6 +31,9 @@ name = "a5"
 path = "src/a6.rs"
 name = "a6"
 
+[[bin]]
+path = "src/aX.rs"
+name = "aX"
 
 [dependencies]
 colored = "2.1.0"
