@@ -19,14 +19,6 @@ fn parse(input: &str) -> Vec<(Vec<usize>, Vec<usize>, usize)> {
         hands.push((part_2_hand, hand, bid_str.parse().unwrap()))
     }
     hands
-
-    // input.lines().map(
-    //     |line| line.split_once(" ").unwrap()
-    // ).map(
-    //     |(cards_str, bid_str)| cards_str.chars().filter_map(
-    //         |card| CARDS.find(card)
-    //     ).collect()
-    // );
 }
 
 fn get_kind(hand: &Vec<usize>) -> usize {
