@@ -42,4 +42,3 @@ name = "aX"
 [dependencies]
 colored = "2.1.0"
 itertools = "0.12.0"
-counter = "0.5.7"
