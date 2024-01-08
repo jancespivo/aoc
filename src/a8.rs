@@ -99,8 +99,8 @@ fn part_2_lcm(input: &str) -> usize {
                 let maybe_cycle = cycles
                     .iter()
                     .find(
-                        |(l_node_idx, l_ending_node_idx, l_navigation_idx, l_cycle_length)|
-                            l_node_idx == &current_node_idx && l_ending_node_idx == &ending_node_idx && l_navigation_idx == navigation_idx
+                        |(l_node_idx, l_ending_node_idx, l_navigation_idx, _l_cycle_length)|
+                            l_node_idx == &current_node_idx && l_ending_node_idx == &ending_node_idx && l_navigation_idx == &navigation_idx
                     );
                 if let None = maybe_cycle {
                     cycles.push((current_node_idx, ending_node_idx, navigation_idx, counter));
@@ -126,13 +126,39 @@ fn part_2_lcm(input: &str) -> usize {
         // }
     }
 
-    let cycle_lengths = cycles
+    // LCM
+
+    let cycle_lengths: Vec<_> = cycles
         .iter()
-        .map(|(current_node_idx, ending_node_idx, navigation_idx, cycle_length)| cycle_length).collect();
-    while (cycle_lengths.iter().min() != cycle_lengths.iter().max()) {
-        cycle_length.iter(min)
+        .map(|(_current_node_idx, _ending_node_idx, _navigation_idx, cycle_length)| *cycle_length).collect();
+    let mut cycles_lengths_product: Vec<usize> = cycle_lengths.clone();
+    let mut c = 0;
+    loop {
+        let mut cycles_lengths_product_max = cycles_lengths_product[0];
+        let mut cycles_lengths_product_min = cycles_lengths_product[0];
+        let mut min_index = 0;
+
+        for (index, &x) in cycles_lengths_product.iter().enumerate() {
+            if x > cycles_lengths_product_max {
+                cycles_lengths_product_max = x;
+            }
+            if x < cycles_lengths_product_min {
+                cycles_lengths_product_min = x;
+                min_index = index;
+            }
+        }
+
+        if cycles_lengths_product_min == cycles_lengths_product_max {
+            break cycles_lengths_product_min;
+        }
+
+        cycles_lengths_product[min_index] += cycle_lengths[min_index];
+
+        c += 1;
+        if c % 1_000_000_000 == 0 {
+            println!("{}", cycles_lengths_product_min);
+        }
     }
-    0
 }
 
 fn part_2_brute_force(input: &str) -> usize {
@@ -210,13 +236,13 @@ struct Seen(Direction, BTreeSet<NodeId>);
 fn main() {
     let input = read_to_string("input8.txt").unwrap();
     let res1 = part_1(input.as_str());
-    let res2 = part_2_brute_force(input.as_str());
+    let res2 = part_2_lcm(input.as_str());
     println!("{} {}", res1, res2);
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{parse, part_1, part_2_unrolled, part_2_brute_force};
+    use crate::{parse, part_1, part_2_unrolled, part_2_brute_force, part_2_lcm};
 
     const INPUT: &str = "RL
 
@@ -264,16 +290,16 @@ XXX = (XXX, XXX)";
 
     #[test]
     fn part_2_test_1() {
-        assert_eq!(part_2_brute_force(INPUT), 2);
+        assert_eq!(part_2_lcm(INPUT), 2);
     }
 
     #[test]
     fn part_2_test_2() {
-        assert_eq!(part_2_brute_force(INPUT2), 6);
+        assert_eq!(part_2_lcm(INPUT2), 6);
     }
 
     #[test]
     fn part_2_test_3() {
-        assert_eq!(part_2_brute_force(INPUT3), 6);
+        assert_eq!(part_2_lcm(INPUT3), 6);
     }
 }
