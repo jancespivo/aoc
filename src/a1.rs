@@ -7,7 +7,7 @@ fn part_1(input: &str) {
         let mut last_digit = 0;
         for char in line.chars() {
             if let Some(digit) = char.to_digit(10) {
-                if let None = first_digit {
+                if first_digit.is_none() {
                     first_digit = Some(digit);
                 }
                 last_digit = digit;
@@ -20,12 +20,7 @@ fn part_1(input: &str) {
 
 fn get_str_digit(inp: &str) -> Option<u32> {
     let numbers: [&str; 10] = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
-    for (digit, number) in numbers.iter().enumerate() {
-        if inp.starts_with(number) {
-            return Some(digit as u32);
-        }
-    }
-    None
+    numbers.iter().position(|number| inp.starts_with(number)).map(|x| x as u32)
 }
 
 fn part_2(input: &str) {
@@ -34,13 +29,8 @@ fn part_2(input: &str) {
         let mut first_digit: Option<u32> = None;
         let mut last_digit = 0;
         for (pos, char) in line.chars().enumerate() {
-            if let Some(digit) = char.to_digit(10) {
-                if let None = first_digit {
-                    first_digit = Some(digit);
-                }
-                last_digit = digit;
-            } else if let Some(digit) = get_str_digit(&line[pos..]) {
-                if let None = first_digit {
+            if let Some(digit) = char.to_digit(10).or_else(|| get_str_digit(&line[pos..])) {
+                if first_digit.is_none() {
                     first_digit = Some(digit);
                 }
                 last_digit = digit;
