@@ -25,11 +25,7 @@ fn color_is_possible(color: &Color, num: i8) -> bool {
         Color::Green => 13,
         Color::Blue => 14,
     };
-    if num > max_num {
-        false
-    } else {
-        true
-    }
+    num <= max_num
 }
 
 type SetPossibility = (bool, i8, i8, i8);
