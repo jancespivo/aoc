@@ -109,8 +109,7 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use itertools::assert_equal;
-    use crate::a2::both_parts;
+    use crate::both_parts;
 
     #[test]
     fn test_part_1() {

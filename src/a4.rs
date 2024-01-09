@@ -3,8 +3,8 @@ use std::collections::{HashSet, VecDeque};
 use std::fs::read_to_string;
 
 struct Line {
-    winning_numbers: Vec<u32>,
-    numbers: Vec<u32>,
+    winning_numbers: Vec<usize>,
+    numbers: Vec<usize>,
 }
 
 fn parse_line(line: &str) -> Line {
@@ -19,37 +19,37 @@ fn parse_line(line: &str) -> Line {
     }
 }
 
-fn wins_for_line(line: Line) -> u32 {
+fn wins_for_line(line: Line) -> usize {
     let numbers = line.numbers.iter().collect::<HashSet<_>>();
     let winning_numbers = line.winning_numbers.iter().collect::<HashSet<_>>();
     let intersection = numbers.intersection(&winning_numbers).collect::<Vec<_>>();
-    intersection.len() as u32
+    intersection.len() as usize
 }
 
-fn points_for_line(line: Line) -> u32 {
+fn points_for_line(line: Line) -> usize {
     let wins = wins_for_line(line);
     if wins > 0 {
-        2_u32.pow(wins - 1)
+        2_usize.pow(wins as u32 - 1)
     } else {
         0
     }
 }
 
-fn part_1(cards: &str) -> u32 {
+fn part_1(cards: &str) -> usize {
     cards.lines().map(|x| parse_line(x)).map(|x| points_for_line(x)).sum()
 }
 
-fn part_2(cards: &str) -> u32 {
-    let mut next_cards: VecDeque<u32> = VecDeque::new();
+fn part_2(cards: &str) -> usize {
+    let mut next_cards: VecDeque<usize> = VecDeque::new();
     let mut points = 0;
     for line in cards.lines() {
         let number_of_copies = next_cards.pop_front().unwrap_or(0) + 1;
         points += number_of_copies;
         let wins = wins_for_line(parse_line(line));
-        for i in 0..min(wins, next_cards.len() as u32) {
-            *&mut next_cards[i as usize] += number_of_copies;
+        for i in 0..min(wins, next_cards.len()) {
+            next_cards[i] += number_of_copies;
         }
-        for _ in next_cards.len() as u32..wins {
+        for _ in next_cards.len()..wins {
             next_cards.push_back(number_of_copies);
         }
     }
@@ -93,5 +93,4 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11";
     fn test_part_2() {
         assert_eq!(part_2(CARDS), 30);
     }
-
 }

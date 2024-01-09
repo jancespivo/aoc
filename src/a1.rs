@@ -1,11 +1,8 @@
-mod a2;
-
 use std::fs::read_to_string;
-use std::str::Lines;
 
-fn part_1(lines: Lines) {
+fn part_1(input: &str) {
     let mut answer = 0;
-    for line in lines {
+    for line in input.lines() {
         let mut first_digit: Option<u32> = None;
         let mut last_digit = 0;
         for char in line.chars() {
@@ -31,9 +28,9 @@ fn get_str_digit(inp: &str) -> Option<u32> {
     None
 }
 
-fn part_2(lines: Lines) {
+fn part_2(input: &str) {
     let mut answer = 0;
-    for line in lines {
+    for line in input.lines() {
         let mut first_digit: Option<u32> = None;
         let mut last_digit = 0;
         for (pos, char) in line.chars().enumerate() {
@@ -55,7 +52,7 @@ fn part_2(lines: Lines) {
 }
 
 fn main() {
-    let inp = read_to_string("input1.txt").unwrap();
-    let lines = inp.lines();
-    part_2(lines);
+    let input = read_to_string("input1.txt").unwrap();
+    part_1(&input);
+    part_2(&input);
 }

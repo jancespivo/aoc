@@ -40,21 +40,20 @@ fn parse(input: &str) -> (Navigation, Nodes, NodeMap) {
     let mut pre_nodes: Vec<[NodeId; 2]> = Vec::new();
     let mut node_map: NodeMap = HashMap::new();
     loop {
-        let maybe_line = lines.next();
-        if let Some(line) = maybe_line {
-            let (source_str, target_str) = line.split_once(" = (").unwrap();
-            let source = source_str.trim();
-            let binding = target_str.replace(")", "");
-            let (target_l, target_r) = binding.split_once(", ").unwrap();
-            let node_id = <Vec<char> as TryInto<[char; 3]>>::try_into(source.chars().collect::<Vec<char>>()).unwrap().clone();
-            pre_nodes.push([
-                <Vec<char> as TryInto<[char; 3]>>::try_into(target_l.chars().collect::<Vec<char>>()).unwrap().clone(),
-                <Vec<char> as TryInto<[char; 3]>>::try_into(target_r.chars().collect::<Vec<char>>()).unwrap().clone()
-            ]);
-            node_map.insert(node_id, pre_nodes.len() - 1);
-        } else {
-            break;
-        }
+        let Some(line) = lines.next() else { break; };
+        let (source_str, target_str) = line.split_once(" = (").unwrap();
+        let source = source_str.trim();
+        let binding = target_str.replace(")", "");
+        let (target_l, target_r) = binding.split_once(", ").unwrap();
+        let node_id = <Vec<char> as TryInto<[char; 3]>>::try_into(source.chars().collect::<Vec<char>>()).unwrap().clone();
+        pre_nodes.push([
+            <Vec<char> as TryInto<[char; 3]>>::try_into(target_l.chars().collect::<Vec<char>>()).unwrap().clone(),
+            <Vec<char> as TryInto<[char; 3]>>::try_into(target_r.chars().collect::<Vec<char>>()).unwrap().clone()
+        ]);
+        node_map.insert(node_id, pre_nodes.len() - 1);
+        // } else {
+        //     break;
+        // }
     }
 
     let mut nodes: Nodes = vec![];
@@ -102,7 +101,7 @@ fn part_2_lcm(input: &str) -> usize {
                         |(l_node_idx, l_ending_node_idx, l_navigation_idx, _l_cycle_length)|
                             l_node_idx == &current_node_idx && l_ending_node_idx == &ending_node_idx && l_navigation_idx == &navigation_idx
                     );
-                if let None = maybe_cycle {
+                if maybe_cycle.is_none() {
                     cycles.push((current_node_idx, ending_node_idx, navigation_idx, counter));
                     println!("find cycle for {}: {} {} {}", current_node_idx, ending_node_idx, navigation_idx, counter);
                 }
@@ -156,7 +155,7 @@ fn part_2_lcm(input: &str) -> usize {
 
         c += 1;
         if c % 1_000_000_000 == 0 {
-            println!("{}", cycles_lengths_product_min);
+            println!("...{}", cycles_lengths_product_min);
         }
     }
 }

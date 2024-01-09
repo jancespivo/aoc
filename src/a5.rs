@@ -87,26 +87,20 @@ fn parse(input: &str) -> (Seeds, SeedRanges, Mapping) {
     let _ = lines.next();  // empty line
     let mut mapping: Mapping = Mapping { submappings: vec![] };
     loop {
-        let desc = lines.next();  // map description
-        if let Some(_) = desc {
-            let mut submapping = Submapping { maps: vec![] };
-            loop {
-                let maybe_line = lines.next();
-                if let Some(line) = maybe_line {
-                    if line == "" {
-                        break;
-                    }
-                    let (destination_start, source_start, range_length) = line.split(" ").map(|x| x.parse().unwrap()).collect_tuple().unwrap();
-                    submapping.maps.push(SourceDestMap::new(destination_start, source_start, range_length));
-                } else {
-                    break;
-                }
-            }
+        let Some(_) = lines.next() else { break; };  // map description
+        let mut submapping = Submapping { maps: vec![] };
+        loop {
+            let maybe_line = lines.next();
+            let Some(line) = maybe_line else { break; };
 
-            mapping.submappings.push(submapping);
-        } else {
-            break;
+            if line == "" {
+                break;
+            }
+            let (destination_start, source_start, range_length) = line.split(" ").map(|x| x.parse().unwrap()).collect_tuple().unwrap();
+            submapping.maps.push(SourceDestMap::new(destination_start, source_start, range_length));
         }
+
+        mapping.submappings.push(submapping);
     }
     (seeds, seed_ranges, mapping)
 }
@@ -130,36 +124,33 @@ fn part_2(input: &str) -> i64 {
         let mut maybe_seed = seeds.next();
         let mut maybe_sourcedestmap = maps.next();
         loop {
-            if let Some(ref mut seed) = maybe_seed {
-                if let Some(sourcedestmap) = maybe_sourcedestmap {
-                    if seed.start <= sourcedestmap.source_end { // DS <= CE
-                        if seed.end < sourcedestmap.source_start {  // DE < CS
-                            new_seeds.push(SeedRange { start: seed.start, end: seed.end }); // DS DE
-                        } else {
-                            if seed.start < sourcedestmap.source_start { // DS < CS
-                                new_seeds.push(SeedRange { start: seed.start, end: sourcedestmap.source_start }); // DS CS
-                            }
-                            new_seeds.push(SeedRange {
-                                start: max(seed.start, sourcedestmap.source_start) + sourcedestmap.destination_diff,
-                                end: min(seed.end, sourcedestmap.source_end) + sourcedestmap.destination_diff,
-                            });
-                        }
-
-                        if sourcedestmap.source_end < seed.end { // CE < DE
-                            seed.start = sourcedestmap.source_end + 1;
-                            maybe_sourcedestmap = maps.next()
-                        } else {
-                            maybe_seed = seeds.next();
-                        }
+            let Some(ref mut seed) = maybe_seed else { break; };
+            if let Some(sourcedestmap) = maybe_sourcedestmap {
+                if seed.start <= sourcedestmap.source_end { // DS <= CE
+                    if seed.end < sourcedestmap.source_start {  // DE < CS
+                        new_seeds.push(SeedRange { start: seed.start, end: seed.end }); // DS DE
                     } else {
+                        if seed.start < sourcedestmap.source_start { // DS < CS
+                            new_seeds.push(SeedRange { start: seed.start, end: sourcedestmap.source_start }); // DS CS
+                        }
+                        new_seeds.push(SeedRange {
+                            start: max(seed.start, sourcedestmap.source_start) + sourcedestmap.destination_diff,
+                            end: min(seed.end, sourcedestmap.source_end) + sourcedestmap.destination_diff,
+                        });
+                    }
+
+                    if sourcedestmap.source_end < seed.end { // CE < DE
+                        seed.start = sourcedestmap.source_end + 1;
                         maybe_sourcedestmap = maps.next()
+                    } else {
+                        maybe_seed = seeds.next();
                     }
                 } else {
-                    new_seeds.push(SeedRange { start: seed.start, end: seed.end });
-                    maybe_seed = seeds.next();
+                    maybe_sourcedestmap = maps.next()
                 }
             } else {
-                break;
+                new_seeds.push(SeedRange { start: seed.start, end: seed.end });
+                maybe_seed = seeds.next();
             }
         }
         seed_ranges = new_seeds;
