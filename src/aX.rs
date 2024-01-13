@@ -4,12 +4,12 @@ fn parse(input: &str) -> () {
 }
 
 
-fn part_1(input: &str) -> u64 {
+fn part_1(input: &str) -> isize {
     parse(input);
     0
  }
 
-fn part_2(input: &str) -> u64 {
+fn part_2(input: &str) -> isize {
     parse(input);
     0
 
